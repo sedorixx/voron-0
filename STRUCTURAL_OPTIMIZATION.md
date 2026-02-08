@@ -1,5 +1,7 @@
 # Structural Optimization Agent for 3D Printed Parts
 
+[![Python CI](https://github.com/sedorixx/voron-0/actions/workflows/python-ci.yml/badge.svg)](https://github.com/sedorixx/voron-0/actions/workflows/python-ci.yml)
+
 Ein autonomer Engineering-Agent zur strukturellen Optimierung von 3D-Druck-Bauteilen mit dem Ziel, maximale Steifigkeit bei minimaler Durchbiegung zu erreichen.
 
 ## Überblick
@@ -259,6 +261,28 @@ Export (STEP + STL)
 - NumPy, SciPy (für numerische Berechnungen)
 - Optional: pythonOCC, CADQuery (für echte CAD-Verarbeitung)
 - Optional: FEniCS, PyFEM (für echte FEM-Analyse)
+
+## CI/CD Integration
+
+Das Projekt ist in die GitHub Actions CI/CD Pipeline integriert:
+
+**Workflow**: `.github/workflows/python-ci.yml`
+
+### Automatische Tests
+- Ausgeführt bei jedem Push und Pull Request
+- Getestet auf Python 3.8, 3.9, 3.10, 3.11, 3.12
+- Umfasst:
+  - Unit Tests (16 Tests)
+  - Code-Linting (pylint, black, mypy)
+  - CLI-Funktionstests
+  - Beispiel-Skript Ausführung
+  - Modul-Import Validierung
+  - Code Coverage Berichte
+
+### Status
+[![Python CI](https://github.com/sedorixx/voron-0/actions/workflows/python-ci.yml/badge.svg)](https://github.com/sedorixx/voron-0/actions/workflows/python-ci.yml)
+
+Alle Tests müssen bestehen, bevor Code gemerged wird.
 
 ## Entwicklungsstatus
 
