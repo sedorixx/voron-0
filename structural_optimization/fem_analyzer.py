@@ -173,11 +173,15 @@ class FEMAnalyzer:
         # Simulate realistic results based on geometry and loads
         num_nodes = mesh['num_nodes']
         
+        # Validate material properties
+        E = mesh['material']['E']
+        if E <= 0:
+            raise ValueError(f"Young's modulus must be positive, got {E}")
+        
         # Generate simulated displacement field
         max_load = max([abs(load['magnitude']) for load in mesh['loads']], default=100.0)
         
         # Simple estimation: deflection proportional to load and inversely proportional to stiffness
-        E = mesh['material']['E']
         # Scaling factor of 100 converts from MPa units and accounts for typical geometry
         # In production, actual K*u=F solution would be performed
         DEFLECTION_SCALE_FACTOR = 100.0

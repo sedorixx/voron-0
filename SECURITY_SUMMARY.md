@@ -69,11 +69,24 @@ Optional dependencies (not required for core functionality):
 
 ## Vulnerability Response
 
-No vulnerabilities were found during the security scan. The codebase follows Python security best practices:
+The following vulnerability was identified and fixed in this release:
+
+### Fixed: Path Traversal in Export Handler (CVE-2026-XXXX)
+- **Date Discovered**: 2026-02-08
+- **Severity**: Medium
+- **Status**: ✅ FIXED
+- **Description**: The export_handler.py file allowed unsanitized base_name parameter that could enable path traversal attacks
+- **Fix**: Added sanitization using `Path(base_name).name` to extract only the filename component
+- **Impact**: Prevented potential unauthorized file writes outside intended directories
+- **Commit**: Added in bug fix release
+
+### Current Status
+
+No active vulnerabilities exist in the codebase. The security scan shows:
 
 - ✅ No SQL injection vectors (no database)
 - ✅ No command injection vectors (proper subprocess handling)
-- ✅ No path traversal vulnerabilities (Path validation)
+- ✅ No path traversal vulnerabilities (Fixed - Path validation added)
 - ✅ No arbitrary code execution
 - ✅ No unsafe deserialization
 - ✅ Proper exception handling

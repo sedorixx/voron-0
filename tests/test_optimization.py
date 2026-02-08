@@ -230,3 +230,170 @@ class TestIntegration:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestEdgeCases:
+    """Tests for edge cases and bug fixes."""
+    
+    def test_config_validation_negative_youngs_modulus(self):
+        """Test that negative Young's modulus is rejected."""
+        with pytest.raises(ValueError, match="Young's modulus must be positive"):
+            OptimizationConfig(youngs_modulus=-1000.0)
+    
+    def test_config_validation_zero_youngs_modulus(self):
+        """Test that zero Young's modulus is rejected."""
+        with pytest.raises(ValueError, match="Young's modulus must be positive"):
+            OptimizationConfig(youngs_modulus=0.0)
+    
+    def test_config_validation_negative_density(self):
+        """Test that negative density is rejected."""
+        with pytest.raises(ValueError, match="Density must be positive"):
+            OptimizationConfig(density=-1.5)
+    
+    def test_config_validation_negative_mesh_size(self):
+        """Test that negative mesh size is rejected."""
+        with pytest.raises(ValueError, match="Mesh size must be positive"):
+            OptimizationConfig(mesh_size=-2.0)
+    
+    def test_config_validation_negative_safety_factor(self):
+        """Test that negative safety factor is rejected."""
+        with pytest.raises(ValueError, match="Safety factor must be positive"):
+            OptimizationConfig(safety_factor=-1.0)
+    
+    def test_config_validation_invalid_poisson_ratio(self):
+        """Test that invalid Poisson ratio is rejected."""
+        with pytest.raises(ValueError, match="Poisson ratio must be in range"):
+            OptimizationConfig(poisson_ratio=0.6)
+        with pytest.raises(ValueError, match="Poisson ratio must be in range"):
+            OptimizationConfig(poisson_ratio=-0.1)
+    
+    def test_boundary_condition_invalid_location(self):
+        """Test that invalid boundary condition location is rejected."""
+        with pytest.raises(TypeError, match="location must be a list"):
+            BoundaryCondition(type='fixed', location="not a list")
+        
+        with pytest.raises(TypeError, match="location must be a list"):
+            BoundaryCondition(type='fixed', location=[0, 0])  # Too short
+        
+        with pytest.raises(TypeError, match="location coordinates must be numeric"):
+            BoundaryCondition(type='fixed', location=["a", "b", "c"])
+    
+    def test_load_case_invalid_magnitude(self):
+        """Test that invalid load magnitude is rejected."""
+        with pytest.raises(TypeError, match="magnitude must be numeric"):
+            LoadCase(type='force', location=[0, 0, 0], magnitude="fifty")
+    
+    def test_load_case_invalid_direction(self):
+        """Test that invalid load direction is rejected."""
+        with pytest.raises(TypeError, match="direction must be a list"):
+            LoadCase(type='force', location=[0, 0, 0], magnitude=50.0, direction="down")
+    
+    def test_export_handler_path_traversal(self):
+        """Test that path traversal is prevented in export handler."""
+        from structural_optimization.export_handler import ExportHandler
+        
+        handler = ExportHandler()
+        geometry = {'type': 'test', 'volume': 1000}
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "safe_dir"
+            output_dir.mkdir()
+            
+            # Try to escape with path traversal
+            malicious_name = "../../../malicious"
+            output_files = handler.export_all(geometry, output_dir, malicious_name)
+            
+            # Verify files are created in safe directory, not escaped
+            for file_path in output_files.values():
+                assert Path(file_path).parent == output_dir
+                assert "../" not in file_path
+    
+    def test_agent_division_by_zero_handling(self):
+        """Test that division by zero is handled in agent report generation."""
+        from structural_optimization import StructuralOptimizationAgent
+        import numpy as np
+        
+        config = OptimizationConfig()
+        agent = StructuralOptimizationAgent(config)
+        
+        # Simulate scenario with zero deflection
+        agent.iteration_history = [
+            {'max_deflection': 0.0, 'mass': 100, 'max_stress': 10, 'first_eigenfrequency': 50}
+        ]
+        
+        best_result = {
+            'iteration': 0,
+            'geometry': {'type': 'test', 'volume': 1000},
+            'fem_results': {'max_deflection': 0.0, 'mass': 100, 'max_stress': 10},
+            'deflection': 0.0
+        }
+        
+        final_fem = {
+            'max_deflection': 0.0,
+            'mass': 100,
+            'max_stress': 10,
+            'first_eigenfrequency': 50
+        }
+        
+        output_files = {}
+        
+        # Should not raise division by zero error
+        report = agent._generate_report(best_result, final_fem, output_files)
+        
+        assert report is not None
+        assert report['improvements']['deflection_reduction_percent'] == 0.0
+    
+    def test_agent_json_sanitization(self):
+        """Test that inf/nan values are sanitized before JSON export."""
+        from structural_optimization import StructuralOptimizationAgent
+        import math
+        
+        config = OptimizationConfig()
+        agent = StructuralOptimizationAgent(config)
+        
+        # Test sanitization function
+        test_data = {
+            'value1': float('inf'),
+            'value2': float('-inf'),
+            'value3': float('nan'),
+            'value4': 42.0,
+            'nested': {
+                'inf_value': float('inf'),
+                'normal': 10
+            },
+            'list': [1, 2, float('nan'), 4]
+        }
+        
+        sanitized = agent._sanitize_for_json(test_data)
+        
+        assert sanitized['value1'] is None
+        assert sanitized['value2'] is None
+        assert sanitized['value3'] is None
+        assert sanitized['value4'] == 42.0
+        assert sanitized['nested']['inf_value'] is None
+        assert sanitized['nested']['normal'] == 10
+        assert sanitized['list'][2] is None
+    
+    def test_fem_analyzer_zero_youngs_modulus(self):
+        """Test that FEM analyzer rejects zero Young's modulus."""
+        from structural_optimization.fem_analyzer import FEMAnalyzer
+        
+        # Create config with zero modulus (should be caught by config validation)
+        # But test FEM analyzer's own validation too
+        config = OptimizationConfig()
+        analyzer = FEMAnalyzer(config)
+        
+        geometry = {'type': 'test', 'volume': 1000}
+        mesh = analyzer._generate_mesh(geometry)
+        
+        # Manually set invalid E to test FEM validation
+        mesh['material'] = {'E': 0.0, 'nu': 0.35, 'rho': 1.15, 'yield_strength': 85}
+        mesh['boundary_conditions'] = []
+        mesh['loads'] = [{'type': 'force', 'magnitude': 50.0}]
+        
+        with pytest.raises(ValueError, match="Young's modulus must be positive"):
+            analyzer._solve_static(mesh)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
