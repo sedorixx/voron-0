@@ -123,7 +123,10 @@ class GeometryOptimizer:
         high_deflection_indices = np.where(deflection_magnitude > threshold)[0]
         
         # Group nearby high-deflection regions
-        num_ribs = min(3, len(high_deflection_indices) // 10)
+        # Use ratio of 1 rib per 10 high-deflection nodes, max 3 ribs to avoid over-reinforcement
+        NODES_PER_RIB = 10
+        MAX_RIBS = 3
+        num_ribs = min(MAX_RIBS, len(high_deflection_indices) // NODES_PER_RIB)
         
         for i in range(num_ribs):
             # Determine rib parameters
@@ -230,7 +233,9 @@ class GeometryOptimizer:
             if region['type'] == 'stress_concentration':
                 # Calculate appropriate fillet radius
                 # Larger radius = lower stress, but may affect printability
-                fillet_radius = min(3.0, self.config.min_wall_thickness)
+                # Max radius of 3mm balances stress reduction with printability and weight
+                MAX_FILLET_RADIUS = 3.0
+                fillet_radius = min(MAX_FILLET_RADIUS, self.config.min_wall_thickness)
                 
                 modifications.append({
                     'type': 'add_fillet',
