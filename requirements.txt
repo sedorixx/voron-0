@@ -1,0 +1,32 @@
+# Structural Optimization Agent - Requirements
+# Python 3.8+
+
+# Core scientific computing
+numpy>=1.21.0
+scipy>=1.7.0
+
+# CAD and geometry processing (optional, for production use)
+# Uncomment when ready to use real CAD libraries:
+# pythonOCC-core>=7.5.0  # OpenCASCADE Python bindings
+# cadquery>=2.1          # Parametric CAD
+# trimesh>=3.9.0         # Mesh processing
+# meshio>=5.0.0          # Mesh I/O
+
+# FEM libraries (optional, for production use)
+# Uncomment when ready to use real FEM solvers:
+# fenics>=2019.1.0       # FEniCS for FEM
+# pygmsh>=7.1.0          # Mesh generation
+
+# Visualization (optional)
+# pyvista>=0.32.0        # 3D visualization
+# matplotlib>=3.4.0      # Plotting
+
+# File formats
+# python-occ-core>=7.5.0 # STEP file handling (part of pythonOCC)
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=3.0.0
+black>=22.0.0
+pylint>=2.12.0
+mypy>=0.930

@@ -1,0 +1,103 @@
+name: Python CI - Structural Optimization
+
+on:
+  push:
+    branches: [ Voron*, copilot/* ]
+    paths:
+      - 'structural_optimization/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - '.github/workflows/python-ci.yml'
+  pull_request:
+    branches: [ Voron*, copilot/* ]
+    paths:
+      - 'structural_optimization/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - '.github/workflows/python-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Lint with pylint
+      run: |
+        pip install pylint
+        pylint structural_optimization --disable=C0114,C0115,C0116,R0913,R0914 --max-line-length=120 || true
+      continue-on-error: true
+    
+    - name: Check code formatting with black
+      run: |
+        pip install black
+        black --check structural_optimization tests || true
+      continue-on-error: true
+    
+    - name: Type check with mypy
+      run: |
+        pip install mypy
+        mypy structural_optimization --ignore-missing-imports || true
+      continue-on-error: true
+    
+    - name: Run unit tests
+      run: |
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH pytest tests/test_optimization.py -v --tb=short
+    
+    - name: Test CLI commands
+      run: |
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH python -m structural_optimization.cli materials
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH python -m structural_optimization.cli --help
+    
+    - name: Run examples
+      run: |
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH python examples/example_usage.py
+    
+    - name: Test module imports
+      run: |
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH python -c "from structural_optimization import StructuralOptimizationAgent; print('✓ Module imports successful')"
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov
+    
+    - name: Run tests with coverage
+      run: |
+        PYTHONPATH=${{ github.workspace }}:$PYTHONPATH pytest tests/test_optimization.py --cov=structural_optimization --cov-report=term --cov-report=html
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: htmlcov/
+        retention-days: 30
