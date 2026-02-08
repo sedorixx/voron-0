@@ -13,6 +13,7 @@ from .cad_handler import CADHandler
 from .fem_analyzer import FEMAnalyzer
 from .geometry_optimizer import GeometryOptimizer
 from .export_handler import ExportHandler
+from .workflow_orchestrator import WorkflowOrchestrator
 
 __all__ = [
     "StructuralOptimizationAgent",
@@ -20,4 +21,5 @@ __all__ = [
     "FEMAnalyzer",
     "GeometryOptimizer",
     "ExportHandler",
+    "WorkflowOrchestrator",
 ]
