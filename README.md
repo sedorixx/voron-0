@@ -12,6 +12,49 @@ The official release of the Voron Zero 3D printer. You can find the BOM in the c
 
 The current revision is **V0.2r1**
 
+## 🔧 Structural Optimization Workflow
+
+This repository includes an automated workflow for optimizing 3D printed parts for structural performance:
+
+### Optimization Pipeline
+
+```
+FreeCAD (Parametric) → Gmsh (Mesh) → FEniCS/CalculiX (FEM) → OpenMDAO (Optimization) → FreeCAD (Updated)
+```
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install numpy scipy
+
+# Run optimization workflow
+python -m structural_optimization.cli workflow part.step -o ./optimized
+
+# See all options
+python -m structural_optimization.cli workflow --help
+```
+
+**Features:**
+- 🎯 Automatic structural optimization for minimum deflection
+- 🔄 Complete workflow integration (CAD → Mesh → FEM → Optimization)
+- 🛠️ Support for FEniCS and CalculiX FEM solvers
+- 📊 Comprehensive reporting with improvement metrics
+- ⚙️ Configurable materials (PA-CF, ABS, PLA, PETG, PC)
+
+**Documentation:**
+- [Workflow Integration Guide](WORKFLOW_INTEGRATION.md) - Complete workflow documentation
+- [Structural Optimization](STRUCTURAL_OPTIMIZATION.md) - Optimization strategies and usage
+- [Implementation Summary](IMPLEMENTATION_SUMMARY.md) - Technical details
+
+**Examples:**
+```bash
+# Run example workflows
+python examples/example_workflow.py
+
+# Test the system
+pytest tests/ -v
+```
+
 
 ## Highlights
 - Compact and portable
