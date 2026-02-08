@@ -14,6 +14,15 @@ class BoundaryCondition:
     type: str  # 'fixed', 'pinned', 'roller', 'symmetric'
     location: List[float]  # [x, y, z] coordinates
     constrained_dof: List[str] = field(default_factory=lambda: ['x', 'y', 'z'])  # degrees of freedom
+    
+    def __post_init__(self):
+        """Validate boundary condition parameters."""
+        if not isinstance(self.location, list) or len(self.location) != 3:
+            raise TypeError("location must be a list of 3 numeric values")
+        if not all(isinstance(x, (int, float)) for x in self.location):
+            raise TypeError("location coordinates must be numeric")
+        if not isinstance(self.constrained_dof, list):
+            raise TypeError("constrained_dof must be a list")
 
 
 @dataclass
@@ -23,6 +32,19 @@ class LoadCase:
     location: List[float]  # [x, y, z] coordinates or surface ID
     magnitude: float  # in N, Nm, Pa, or °C
     direction: List[float] = field(default_factory=lambda: [0, 0, -1])  # normalized vector
+    
+    def __post_init__(self):
+        """Validate load case parameters."""
+        if not isinstance(self.location, list) or len(self.location) != 3:
+            raise TypeError("location must be a list of 3 numeric values")
+        if not all(isinstance(x, (int, float)) for x in self.location):
+            raise TypeError("location coordinates must be numeric")
+        if not isinstance(self.magnitude, (int, float)):
+            raise TypeError("magnitude must be numeric")
+        if not isinstance(self.direction, list) or len(self.direction) != 3:
+            raise TypeError("direction must be a list of 3 numeric values")
+        if not all(isinstance(x, (int, float)) for x in self.direction):
+            raise TypeError("direction components must be numeric")
 
 
 @dataclass
@@ -71,6 +93,27 @@ class OptimizationConfig:
     target_deflection: Optional[float] = None  # mm (if None, minimize)
     target_first_frequency: Optional[float] = None  # Hz (if None, maximize)
     target_mass_reduction: Optional[float] = None  # percentage
+    
+    def __post_init__(self):
+        """Validate configuration parameters."""
+        if self.youngs_modulus <= 0:
+            raise ValueError(f"Young's modulus must be positive, got {self.youngs_modulus}")
+        if self.density <= 0:
+            raise ValueError(f"Density must be positive, got {self.density}")
+        if self.mesh_size <= 0:
+            raise ValueError(f"Mesh size must be positive, got {self.mesh_size}")
+        if self.safety_factor <= 0:
+            raise ValueError(f"Safety factor must be positive, got {self.safety_factor}")
+        if self.yield_strength <= 0:
+            raise ValueError(f"Yield strength must be positive, got {self.yield_strength}")
+        if self.poisson_ratio < 0 or self.poisson_ratio >= 0.5:
+            raise ValueError(f"Poisson ratio must be in range [0, 0.5), got {self.poisson_ratio}")
+        if self.layer_height <= 0:
+            raise ValueError(f"Layer height must be positive, got {self.layer_height}")
+        if self.nozzle_diameter <= 0:
+            raise ValueError(f"Nozzle diameter must be positive, got {self.nozzle_diameter}")
+        if self.min_wall_thickness <= 0:
+            raise ValueError(f"Min wall thickness must be positive, got {self.min_wall_thickness}")
     
     def to_dict(self) -> Dict:
         """Convert configuration to dictionary."""

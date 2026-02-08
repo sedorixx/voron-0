@@ -10,6 +10,7 @@ This module coordinates the entire optimization workflow:
 """
 
 import logging
+import math
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import json
@@ -115,8 +116,11 @@ class StructuralOptimizationAgent:
             
             # Check convergence
             if iteration > 0:
-                improvement = (self.iteration_history[-2]['max_deflection'] - 
-                              max_deflection) / self.iteration_history[-2]['max_deflection']
+                prev_deflection = self.iteration_history[-2]['max_deflection']
+                if prev_deflection > 0:
+                    improvement = (prev_deflection - max_deflection) / prev_deflection
+                else:
+                    improvement = 0.0 if max_deflection == 0 else 1.0
                 logger.info(f"Improvement: {improvement * 100:.2f}%")
                 
                 if improvement < 0.01:  # Less than 1% improvement
@@ -150,6 +154,9 @@ class StructuralOptimizationAgent:
         
         # Generate optimization report
         report = self._generate_report(best_result, final_fem, output_files)
+        
+        # Sanitize report for JSON serialization (remove inf/nan values)
+        report = self._sanitize_for_json(report)
         
         # Save report
         report_path = output_dir / "optimization_report.json"
@@ -228,7 +235,10 @@ class StructuralOptimizationAgent:
         # Calculate improvement metrics
         initial_deflection = self.iteration_history[0]['max_deflection']
         final_deflection = final_fem['max_deflection']
-        deflection_improvement = (initial_deflection - final_deflection) / initial_deflection * 100
+        if initial_deflection > 0:
+            deflection_improvement = (initial_deflection - final_deflection) / initial_deflection * 100
+        else:
+            deflection_improvement = 0.0
         
         report = {
             'optimization_summary': {
@@ -250,7 +260,7 @@ class StructuralOptimizationAgent:
             },
             'improvements': {
                 'deflection_reduction_percent': deflection_improvement,
-                'stiffness_increase_percent': (initial_deflection / final_deflection - 1) * 100
+                'stiffness_increase_percent': (initial_deflection / final_deflection - 1) * 100 if final_deflection > 0 else (float('inf') if initial_deflection > 0 else 0.0)
             },
             'material': {
                 'type': self.config.material_type,
@@ -269,3 +279,22 @@ class StructuralOptimizationAgent:
         }
         
         return report
+    
+    def _sanitize_for_json(self, obj):
+        """
+        Sanitize object for JSON serialization by replacing inf/nan values.
+        
+        Args:
+            obj: Object to sanitize (dict, list, or primitive)
+            
+        Returns:
+            Sanitized object safe for JSON serialization
+        """
+        if isinstance(obj, dict):
+            return {k: self._sanitize_for_json(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._sanitize_for_json(v) for v in obj]
+        elif isinstance(obj, float):
+            if math.isinf(obj) or math.isnan(obj):
+                return None
+        return obj

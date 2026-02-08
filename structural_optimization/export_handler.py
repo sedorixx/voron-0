@@ -46,6 +46,9 @@ class ExportHandler:
         # Create output directory if it doesn't exist
         output_dir.mkdir(parents=True, exist_ok=True)
         
+        # Sanitize base_name to prevent path traversal
+        base_name = Path(base_name).name
+        
         output_files = {}
         
         # Export STEP file
