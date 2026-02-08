@@ -240,6 +240,15 @@ class StructuralOptimizationAgent:
         else:
             deflection_improvement = 0.0
         
+        # Calculate stiffness increase (inverse of deflection ratio)
+        # Avoid creating infinity values by using None for incomparable cases
+        if final_deflection > 0 and initial_deflection > 0:
+            stiffness_increase_percent = (initial_deflection / final_deflection - 1) * 100
+        elif initial_deflection > 0 and final_deflection == 0:
+            stiffness_increase_percent = None  # Infinite improvement case
+        else:
+            stiffness_increase_percent = 0.0
+        
         report = {
             'optimization_summary': {
                 'iterations': len(self.iteration_history),
@@ -260,7 +269,7 @@ class StructuralOptimizationAgent:
             },
             'improvements': {
                 'deflection_reduction_percent': deflection_improvement,
-                'stiffness_increase_percent': (initial_deflection / final_deflection - 1) * 100 if final_deflection > 0 else (float('inf') if initial_deflection > 0 else 0.0)
+                'stiffness_increase_percent': stiffness_increase_percent
             },
             'material': {
                 'type': self.config.material_type,

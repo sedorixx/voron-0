@@ -107,6 +107,8 @@ class OptimizationConfig:
         if self.yield_strength <= 0:
             raise ValueError(f"Yield strength must be positive, got {self.yield_strength}")
         if self.poisson_ratio < 0 or self.poisson_ratio >= 0.5:
+            # Poisson ratio must be in [0, 0.5). Value of 0.5 represents incompressible
+            # materials, which cause numerical issues in FEM (infinite bulk modulus)
             raise ValueError(f"Poisson ratio must be in range [0, 0.5), got {self.poisson_ratio}")
         if self.layer_height <= 0:
             raise ValueError(f"Layer height must be positive, got {self.layer_height}")
